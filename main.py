@@ -25,5 +25,33 @@ def report(station, date):
             "date": date,
             "temperature": temperature}
 
+
+@app.route("/api/v1/<station>")
+def report_all_station(station):
+    # Reading CSV file to load data
+    filename = r"data-small\TG_STAID" + str(station).zfill(6) + ".txt"
+    df = pd.read_csv(filename, skiprows=20, parse_dates=["    DATE"])
+    # Making Good columns to get Good data
+    df['TG0'] = df['   TG'].mask(df[' Q_TG']==9, np.nan)
+    df["TG"] = df['TG0'] / 10
+    # Making a dict of all the temperature and dates.
+    result = df[['TG','    DATE']].to_dict(orient="records")
+    return result
+
+
+@app.route("/api/v1/yearly/<station>/<year>")
+def report_yearly(station, year):
+    # Reading CSV file to load data
+    filename = r"data-small\TG_STAID" + str(station).zfill(6) + ".txt"
+    df = pd.read_csv(filename, skiprows=20, parse_dates=["    DATE"])
+    # Making Good columns to get Good data
+    df['TG0'] = df['   TG'].mask(df[' Q_TG']==9, np.nan)
+    df["TG"] = df['TG0'] / 10
+    # Converting date columns to strings
+    df["    DATE"] = df["    DATE"].astype(str)
+    # Making a dict of the temperature and dates of given year.
+    result = df[df["    DATE"].str.startswith(str(year))][['TG','    DATE']].to_dict(orient="records")
+    return result
+
 if __name__ == "__main__":
     app.run(debug=True)
